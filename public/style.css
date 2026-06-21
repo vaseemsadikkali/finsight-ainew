@@ -111,6 +111,19 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
+/* Custom scrollbar for premium terminal look on workspaces */
+.left-workspace::-webkit-scrollbar,
+.right-workspace::-webkit-scrollbar,
+.news-feed::-webkit-scrollbar {
+  width: 6px;
+}
+.left-workspace::-webkit-scrollbar-thumb,
+.right-workspace::-webkit-scrollbar-thumb,
+.news-feed::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
 /* ===== HEADER ===== */
 .app-header {
   height: 60px;
@@ -235,19 +248,25 @@ body {
 .workspace-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 340px;
-  padding: 12px;
-  gap: 12px;
+  grid-template-columns: 1fr 380px; /* 2 Columns: Main Content | AI Core + News */
+  gap: 16px;
+  padding: 16px;
+  height: calc(100vh - 70px);
   overflow: hidden;
-  height: calc(100vh - 60px);
 }
-.left-workspace,
+.left-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
 .right-workspace {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   overflow-y: auto;
-  scrollbar-gutter: stable;
+  padding-right: 4px;
 }
 
 /* ===== CARD ===== */
@@ -836,7 +855,13 @@ body {
 .green-text { color: var(--color-green); }
 
 /* ===== NEWS SECTION ===== */
-.news-card { max-height: 500px; overflow: hidden; }
+.news-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Spans the full height of the terminal */
+  max-height: calc(100vh - 100px);
+  overflow: hidden;
+}
 .news-tabs {
   display: flex;
   gap: 4px;
@@ -880,9 +905,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
-  max-height: 380px;
-  padding-right: 4px;
+  flex: 1;
+  overflow-y: auto; /* Independent inner scrolling so it's super fast to browse */
+  padding-right: 8px;
 }
 .news-item {
   background: var(--bg-tertiary);
@@ -1130,8 +1155,20 @@ body {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1200px) {
-  .workspace-grid { grid-template-columns: 1fr; }
+@media (max-width: 1400px) {
+  .workspace-grid {
+    grid-template-columns: 1fr 350px;
+    height: auto;
+    overflow: visible;
+  }
+  .news-card {
+    height: 500px;
+  }
+}
+@media (max-width: 992px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
   .right-workspace { flex-direction: row; flex-wrap: wrap; }
   .right-workspace > .card { flex: 1 1 280px; min-width: 280px; }
 }
@@ -1166,11 +1203,6 @@ body {
   font-weight: 700; 
   font-family: var(--font-mono); 
 }
-/* ========================================== */
-/* YOUR OLD FEATURES & EXISTING CSS           */
-/* (Keep everything above this line intact!)  */
-/* ========================================== */
-
 
 /* ========================================== */
 /* NEW FEATURE: INITIAL LOADING SCREEN        */
@@ -1230,22 +1262,132 @@ body {
   margin-top: 10px;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border-color);
-  border-top-color: var(--color-blue);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-top: 10px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+/* (The existing .spinner definition higher up handles the loader rotation) */
 
 @keyframes pulse-logo {
   0% { transform: scale(1); }
   50% { transform: scale(1.1); filter: drop-shadow(0 0 25px rgba(99, 102, 241, 0.6)); }
   100% { transform: scale(1); }
+}
+
+/* ========================================== */
+/* MARKET NEWS MODAL STYLES                   */
+/* ========================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  z-index: 100000; /* Ensures it sits above everything */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.news-modal-content {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 800px;
+  height: 80vh; /* Fixed height so the news scrolls inside it */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  padding: 20px;
+}
+
+.news-modal-content .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.news-modal-content .modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+  color: var(--color-red);
+}
+
+/* Make sure the news feed inside the modal scrolls properly */
+.news-modal-content .news-feed {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* ========================================== */
+/* MARKET NEWS WIDGET — COMPACT INLINE FIX    */
+/* ========================================== */
+
+/* Keep the widget in the normal column flow but constrain its height */
+.market-news-widget {
+  position: static !important; /* Stay in the right-workspace column */
+  flex-shrink: 0 !important;   /* Don't let flexbox squeeze it */
+  width: 100% !important;      /* Fill the column width */
+  height: 380px !important;    /* Fixed compact height */
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Header stays a fixed height at the top */
+.market-news-header {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+/* Tab row also fixed height */
+.news-filter-tabs {
+  flex-shrink: 0;
+}
+
+/* The scrollable news list fills remaining space */
+.market-news-content {
+  flex: 1 1 0 !important;
+  overflow-y: auto !important;
+  min-height: 0 !important; /* critical for flex scroll to work */
+  padding: 8px 0 !important;
+}
+
+/* Compact tabs to save vertical space */
+.news-tab-btn {
+  padding: 4px 8px !important;
+  font-size: 10px !important;
 }

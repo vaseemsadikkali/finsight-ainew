@@ -129,13 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let prevPrice = 0;
 
   function triggerSystemAlert(title, message, type = 'info') {
-    // Throttle duplicate alerts (10 seconds)
     if (Date.now() - lastAlertTime < 10000) return;
     lastAlertTime = Date.now();
 
-    showToast(message, type); // App Toast
+    showToast(message, type);
     
-    // System Notification (TradingView style)
     if (Notification.permission === 'granted') {
       new Notification(`Finsight AI: ${title}`, { body: message });
     } else if (Notification.permission !== 'denied') {
@@ -388,14 +386,12 @@ document.addEventListener('DOMContentLoaded', () => {
       newsData = data.categorizedNews;
       activeNewsCategory = 'all';
 
-      // Assign Sentiment Engine UI Update
       if (data.sentiment) {
         document.getElementById('sentiment-text').textContent = `${data.sentiment.label} (${data.sentiment.score}%)`;
         document.getElementById('sentiment-bar').style.width = `${data.sentiment.score}%`;
         const driversList = document.getElementById('sentiment-drivers');
         driversList.innerHTML = data.sentiment.drivers.map(d => `<li>${d}</li>`).join('');
         
-        // Color code text based on fear/greed
         document.getElementById('sentiment-text').className = data.sentiment.score >= 60 ? 'green-text' : (data.sentiment.score <= 40 ? 'red-text' : '');
       }
 
@@ -525,7 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data.symbol !== currentSymbol || data.interval !== currentTimeframe) return;
     const c = data.candle, t = c.time / 1000;
     
-    // Alert Triggers
     const currentRsi = c.rsi;
     if (currentRsi > 70 && prevRsi <= 70) triggerSystemAlert('Overbought Warning', `${data.symbol} RSI crossed 70. Reversal likely.`, 'warning');
     if (currentRsi < 30 && prevRsi >= 30) triggerSystemAlert('Oversold Alert', `${data.symbol} RSI dropped below 30. Rebound possible.`, 'success');
@@ -577,7 +572,6 @@ document.addEventListener('DOMContentLoaded', () => {
       volatilityVal.textContent = ai.sentiment.volatility + '%';
     }
 
-    // Smart Trade Setup System Population
     const setupContainer = document.getElementById('trade-setup-container');
     if (ai.setup) {
       setupContainer.style.display = 'block';
@@ -588,7 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('setup-tp2').textContent = ai.setup.tp2;
       document.getElementById('setup-sl').textContent = ai.setup.sl;
       
-      // Auto-fill order form with TP1/SL defaults based on the setup
       aiSuggestedTp = ai.setup.tp1;
       aiSuggestedSl = ai.setup.sl;
     } else {
@@ -826,32 +819,128 @@ document.addEventListener('DOMContentLoaded', () => {
   }));
 
   document.getElementById('run-backtest-btn').addEventListener('click', (e) => {
-    document.getElementById('backtest-placeholder').style.display = 'none';
-    document.getElementById('backtest-results-section').style.display = 'none';
-    e.target.disabled = true; e.target.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Simulating...';
+    // Structural wrapper clean up before execution
+    const placeholder = document.getElementById('backtest-placeholder') || document.querySelector('.backtest-placeholder');
+    const oldResultsSection = document.getElementById('backtest-results-section');
+    const newResultsGrid = document.querySelector('.backtest-results-grid');
+
+    if (placeholder) placeholder.style.display = 'none';
+    if (oldResultsSection) oldResultsSection.style.display = 'none';
+    if (newResultsGrid) newResultsGrid.style.display = 'none';
+
+    e.target.disabled = true; 
+    e.target.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Simulating...';
     triggerSound('click');
     socket.emit('run_backtest', { symbol: currentSymbol, interval: currentTimeframe, strategy: document.getElementById('backtest-strategy').value, type: currentSymbolType });
   });
 
+  // ======================================================= //
+  // DEFENSIVE, ERROR-PROOF BACKTEST RESULTS HANDLER       //
+  // ======================================================= //
   socket.on('backtest_results', (data) => {
-    const btn = document.getElementById('run-backtest-btn'); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-play"></i> Run Backtest';
-    if (data.error) return showToast(data.error, 'error');
-    document.getElementById('bt-total-trades').textContent = data.totalTrades;
-    document.getElementById('bt-win-rate').textContent = data.winRate;
-    document.getElementById('bt-ratio').textContent = `${data.wins}W / ${data.losses}L`;
-    document.getElementById('bt-profit').textContent = `${data.netProfit >= 0 ? '+' : ''}$${data.netProfit.toFixed(2)}`;
-    document.getElementById('bt-profit').className = `val ${data.netProfit >= 0 ? 'green' : 'red'}`;
-    document.getElementById('bt-roi').textContent = data.roi;
-    document.getElementById('bt-roi').className = `val ${data.netProfit >= 0 ? 'green' : 'red'}`;
+    // Always release loading indicator button states cleanly first
+    const btn = document.getElementById('run-backtest-btn');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> Run Backtest';
+    }
 
-    const tbody = document.getElementById('backtest-table').getElementsByTagName('tbody')[0]; tbody.innerHTML = '';
-    data.history.forEach(trade => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td><span class="badge-order-type ${trade.type.toLowerCase()}">${trade.type}</span></td><td>$${trade.entryPrice.toFixed(2)}</td><td>$${trade.exitPrice.toFixed(2)}</td><td><span class="badge badge-hold" style="font-size:9px;">${trade.exitReason}</span></td><td class="${trade.pnl >= 0 ? 'green' : 'red'}">$${trade.pnl.toFixed(2)}</td><td>${new Date(trade.time).toLocaleTimeString()}</td>`;
-      tbody.appendChild(tr);
-    });
-    document.getElementById('backtest-results-section').style.display = 'block';
-    showToast('Backtest completed.', 'success');
+    // 1. Guard clause: If data is missing or success flag explicitly missing/false, break cleanly
+    if (!data || data.error || (data.success === false)) {
+      console.error("Backtest Execution Rejected:", data ? data.error : "No response payload received.");
+      showToast(`Backtest failed: ${data && data.error ? data.error : 'Execution conditions unfulfilled'}`, 'error');
+      return;
+    }
+
+    try {
+      // 2. Defensive Number Parsing (Ensures safety from unexpected undefined/null parameters)
+      const safeTrades = data.totalTrades !== undefined ? data.totalTrades : (data.tradesCount || 0);
+      const safeWinRate = parseFloat(data.winRate || 0).toFixed(2);
+      
+      // Map cross-platform key variants for returns/profit layers safely
+      const rawReturn = data.netProfit !== undefined ? data.netProfit : (data.totalReturn || 0);
+      const safeReturn = parseFloat(rawReturn).toFixed(2);
+      const safeROI = data.roi !== undefined ? data.roi : `${safeReturn}%`;
+      const safeBalance = parseFloat(data.finalBalance || 0).toFixed(2);
+
+      // 3. Dynamic layout state transformations
+      const placeholder = document.getElementById('backtest-placeholder') || document.querySelector('.backtest-placeholder');
+      const resultsSection = document.getElementById('backtest-results-section');
+      const resultsGrid = document.querySelector('.backtest-results-grid');
+      
+      if (placeholder) placeholder.style.display = 'none';
+      if (resultsSection) resultsSection.style.display = 'block';
+      if (resultsGrid) {
+        resultsGrid.style.display = 'grid';
+        resultsGrid.classList.remove('hidden');
+      }
+
+      // 4. Element Extraction and Safe Inner-Text Interfacing
+      const tradesEl = document.getElementById('bt-total-trades') || document.getElementById('bt-trades');
+      const winrateEl = document.getElementById('bt-win-rate') || document.getElementById('bt-winrate');
+      const ratioEl = document.getElementById('bt-ratio');
+      const profitEl = document.getElementById('bt-profit') || document.getElementById('bt-return');
+      const roiEl = document.getElementById('bt-roi');
+      const balanceEl = document.getElementById('bt-balance');
+
+      if (tradesEl) tradesEl.textContent = safeTrades;
+      if (winrateEl) winrateEl.textContent = `${safeWinRate}%`;
+      
+      if (ratioEl) {
+        const wins = data.wins || 0;
+        const losses = data.losses || 0;
+        ratioEl.textContent = `${wins}W / ${losses}L`;
+      }
+
+      if (profitEl) {
+        profitEl.textContent = `${rawReturn >= 0 ? '+' : ''}$${safeReturn}`;
+        profitEl.className = `val ${rawReturn >= 0 ? 'green' : 'red'}`;
+        // Fallback styling compatibility logic
+        if (profitEl.id === 'bt-return') {
+          profitEl.innerText = `${safeReturn}%`;
+          profitEl.style.color = rawReturn >= 0 ? 'var(--color-green)' : 'var(--color-red)';
+        }
+      }
+
+      if (roiEl) {
+        roiEl.textContent = safeROI;
+        roiEl.className = `val ${rawReturn >= 0 ? 'green' : 'red'}`;
+      }
+      
+      if (balanceEl) {
+        balanceEl.innerText = `$${safeBalance}`;
+      }
+
+      // 5. Historical execution trades list parsing
+      const tbody = document.getElementById('backtest-table')?.getElementsByTagName('tbody')[0];
+      if (tbody) {
+        tbody.innerHTML = '';
+        const executionHistory = data.history || [];
+        
+        if (executionHistory.length === 0) {
+          tbody.innerHTML = '<tr class="placeholder-row"><td colspan="6">Simulation finished with 0 recorded matches.</td></tr>';
+        } else {
+          executionHistory.forEach(trade => {
+            const tr = document.createElement('tr');
+            const tradePnL = trade.pnl !== undefined ? trade.pnl : 0;
+            tr.innerHTML = `
+              <td><span class="badge-order-type ${trade.type ? trade.type.toLowerCase() : 'hold'}">${trade.type || 'UNKNOWN'}</span></td>
+              <td>$${parseFloat(trade.entryPrice || 0).toFixed(2)}</td>
+              <td>$${parseFloat(trade.exitPrice || 0).toFixed(2)}</td>
+              <td><span class="badge badge-hold" style="font-size:9px;">${escapeHtml(trade.exitReason || 'Target')}</span></td>
+              <td class="${tradePnL >= 0 ? 'green' : 'red'}">$${parseFloat(tradePnL).toFixed(2)}</td>
+              <td>${trade.time ? new Date(trade.time).toLocaleTimeString() : '--:--:--'}</td>`;
+            tbody.appendChild(tr);
+          });
+        }
+      }
+
+      // 6. Push success confirmation toast overlay 
+      showToast(`Backtest complete for ${data.symbol || currentSymbol}`, 'success');
+
+    } catch (err) {
+      console.error("Critical rendering exception within backtest payload module loop:", err);
+    }
   });
 
   // ==================== VOICE RECOGNITION ====================
@@ -960,7 +1049,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==================== INIT ====================
-  // Check notification permissions for Alert Engine
   if (Notification && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
     Notification.requestPermission();
   }
@@ -968,21 +1056,66 @@ document.addEventListener('DOMContentLoaded', () => {
   initChart();
   initMiniCharts();
 });
-// ========================================== //
-// YOUR OLD FEATURES & EXISTING JAVASCRIPT    //
-// (Keep all your existing code above!)       //
-// ========================================== //
-
 
 // ========================================== //
 // NEW FEATURE: REMOVE LOADING SCREEN         //
 // ========================================== //
 window.addEventListener('load', () => {
   const loadingScreen = document.getElementById('initial-loading-screen');
-  
   if (loadingScreen) {
     setTimeout(() => {
       loadingScreen.classList.add('hidden');
     }, 500); 
+  }
+});
+
+// ========================================== //
+// NEW FEATURE: MARKET NEWS MODAL CONTROLLER  //
+// ========================================== //
+window.addEventListener('DOMContentLoaded', () => {
+  const openNewsBtn = document.getElementById('open-news-btn');
+  const closeNewsBtn = document.getElementById('close-news-btn');
+  const newsModal = document.getElementById('news-modal-overlay');
+
+  if (openNewsBtn && closeNewsBtn && newsModal) {
+    openNewsBtn.addEventListener('click', () => {
+      newsModal.classList.remove('hidden');
+    });
+
+    closeNewsBtn.addEventListener('click', () => {
+      newsModal.classList.add('hidden');
+    });
+
+    newsModal.addEventListener('click', (e) => {
+      if (e.target === newsModal) {
+        newsModal.classList.add('hidden');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !newsModal.classList.contains('hidden')) {
+        newsModal.classList.add('hidden');
+      }
+    });
+  }
+});
+
+// ========================================== //
+// NEW FEATURE: STANDALONE NEWS TERMINAL      //
+// ========================================== //
+window.addEventListener('DOMContentLoaded', () => {
+  const newsTerminalIcon = document.getElementById('open-news-terminal-btn'); 
+
+  if (newsTerminalIcon) {
+    newsTerminalIcon.addEventListener('click', () => {
+      const summaryItems = document.querySelectorAll('.summary-item');
+      const activeSymbols = Array.from(summaryItems)
+        .map(item => item.getAttribute('data-symbol')?.replace('USDT', ''))
+        .filter(Boolean)
+        .join(',');
+
+      const querySymbols = activeSymbols || 'BTC';
+      window.open(`/news.html?symbols=${querySymbols}`, '_blank', 'width=1300,height=850,resizable=yes,scrollbars=yes');
+    });
   }
 });

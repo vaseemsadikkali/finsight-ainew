@@ -10,6 +10,134 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ===== MARKET NEWS WIDGET — TERMINAL STYLE ===== */
+    .market-news-widget {
+      background: var(--bg-secondary, #131722);
+      border: 1px solid var(--border-color, rgba(99,102,241,0.2));
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .market-news-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color, rgba(99,102,241,0.2));
+      background: var(--bg-tertiary, #1a1f2e);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary, #e2e8f0);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .news-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .news-header-icon {
+      color: var(--color-blue, #6366f1);
+      font-size: 13px;
+    }
+    .news-live-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #10b981;
+      letter-spacing: 0.08em;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .news-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+    .news-filter-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 10px;
+      background: var(--bg-secondary, #131722);
+      border-bottom: 1px solid var(--border-color, rgba(99,102,241,0.15));
+      overflow-x: auto;
+    }
+    .news-filter-tabs::-webkit-scrollbar { display: none; }
+    .news-tab-btn {
+      flex-shrink: 0;
+      background: transparent;
+      border: 1px solid var(--border-color, rgba(99,102,241,0.2));
+      border-radius: 6px;
+      color: var(--text-muted, #8892a4);
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .news-tab-btn:hover {
+      background: rgba(99,102,241,0.1);
+      color: var(--text-primary, #e2e8f0);
+      border-color: rgba(99,102,241,0.4);
+    }
+    .news-tab-btn.active {
+      background: rgba(99,102,241,0.18);
+      color: var(--color-blue, #818cf8);
+      border-color: rgba(99,102,241,0.5);
+    }
+    .news-tab-btn .count {
+      background: rgba(99,102,241,0.25);
+      color: var(--color-blue, #818cf8);
+      border-radius: 10px;
+      padding: 0 5px;
+      font-size: 9px;
+      line-height: 16px;
+    }
+    .market-news-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99,102,241,0.3) transparent;
+    }
+    .market-news-content::-webkit-scrollbar { width: 4px; }
+    .market-news-content::-webkit-scrollbar-track { background: transparent; }
+    .market-news-content::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 4px; }
+    .news-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));
+      font-size: 12px;
+      color: var(--text-secondary, #94a3b8);
+      line-height: 1.5;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .news-item:last-child { border-bottom: none; }
+    .news-item:hover {
+      background: rgba(99,102,241,0.07);
+      color: var(--text-primary, #e2e8f0);
+    }
+  </style>
 </head>
 <body>
   <div id="initial-loading-screen" class="initial-loading-screen">
@@ -32,6 +160,9 @@
       <div class="summary-item" data-symbol="SOLUSDT"><span class="lbl">SOL/USDT</span><span class="val price-ticker" id="header-price-sol">---</span></div>
     </div>
     <div class="header-controls">
+      <button id="open-news-btn" class="icon-btn" title="Market News Modal"><i class="fa-solid fa-newspaper"></i></button>
+      <button id="open-news-terminal-btn" class="icon-btn" title="Open Full News Terminal"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+      
       <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Light/Dark Theme"><i class="fa-solid fa-moon"></i></button>
       <button class="voice-mic-btn" id="voice-mic-btn" title="Voice Search"><i class="fa-solid fa-microphone"></i></button>
       <div class="conn-status" id="connection-indicator"><span class="indicator-dot"></span><span class="indicator-text">Connecting...</span></div>
@@ -322,20 +453,57 @@
         </div>
       </div>
 
-      <div class="card news-card">
-        <div class="card-header">
-          <h3><i class="fa-solid fa-newspaper"></i> Market News</h3>
-          <span class="live-dot-pulse" id="news-status" style="display:none;">LOADED</span>
+      <!-- Market News Widget — now inside right-workspace -->
+      <div class="market-news-widget">
+        <div class="market-news-header">
+          <span class="news-header-left">
+            <i class="fa-solid fa-satellite-dish news-header-icon"></i>
+            Market News
+          </span>
+          <span class="news-live-badge"><span class="news-live-dot"></span>LIVE</span>
+          <span id="news-status" style="display:none; align-items:center; gap:5px; font-size:10px; color:var(--color-green);"><i class="fa-solid fa-circle-check"></i> Loaded</span>
         </div>
-        <div class="news-tabs" id="news-tabs">
-          <button class="news-tab-btn active" data-category="all"><i class="fa-solid fa-globe" style="font-size:9px;"></i> All <span class="count" id="news-count-all">0</span></button>
-          <button class="news-tab-btn" data-category="dealsAndFunding"><i class="fa-solid fa-handshake" style="font-size:9px;"></i> Deals <span class="count" id="news-count-deals">0</span></button>
-          <button class="news-tab-btn" data-category="meetingsAndCorporate"><i class="fa-solid fa-users" style="font-size:9px;"></i> Meetings <span class="count" id="news-count-meetings">0</span></button>
-          <button class="news-tab-btn" data-category="improvementsAndUpgrades"><i class="fa-solid fa-arrow-trend-up" style="font-size:9px;"></i> Growth <span class="count" id="news-count-improvements">0</span></button>
-          <button class="news-tab-btn" data-category="general"><i class="fa-solid fa-circle-info" style="font-size:9px;"></i> General <span class="count" id="news-count-general">0</span></button>
+        <div class="news-filter-tabs" id="news-tabs">
+          <button class="news-tab-btn active" data-category="all"><i class="fa-solid fa-globe"></i> All <span class="count" id="news-count-all">0</span></button>
+          <button class="news-tab-btn" data-category="dealsAndFunding"><i class="fa-solid fa-handshake"></i> Deals <span class="count" id="news-count-deals">0</span></button>
+          <button class="news-tab-btn" data-category="meetingsAndCorporate"><i class="fa-solid fa-users"></i> Corp <span class="count" id="news-count-meetings">0</span></button>
+          <button class="news-tab-btn" data-category="improvementsAndUpgrades"><i class="fa-solid fa-arrow-trend-up"></i> Growth <span class="count" id="news-count-improvements">0</span></button>
+          <button class="news-tab-btn" data-category="general"><i class="fa-solid fa-newspaper"></i> General <span class="count" id="news-count-general">0</span></button>
         </div>
-        <div class="news-feed" id="news-feed">
-          <div class="news-empty"><i class="fa-solid fa-satellite-dish"></i><span>Select an asset to load news</span></div>
+        <div class="market-news-content" id="news-feed">
+          <div class="news-item">Breaking: Bitcoin hits new resistance level...</div>
+          <div class="news-item">Fed announces new interest rate pause...</div>
+          <div class="news-item">Tech stocks rally after earnings reports...</div>
+        </div>
+      </div>
+      
+    </section>
+
+    <section class="news-workspace" style="display:none;">
+      <div class="market-news-widget">
+        <!-- The Title Area -->
+        <div class="market-news-header">
+          <span class="news-header-left">
+            <i class="fa-solid fa-satellite-dish news-header-icon"></i>
+            Market News
+          </span>
+          <span class="news-live-badge"><span class="news-live-dot"></span>LIVE</span>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="news-filter-tabs" id="news-tabs">
+          <button class="news-tab-btn active" data-category="all"><i class="fa-solid fa-globe"></i> All <span class="count" id="news-count-all">0</span></button>
+          <button class="news-tab-btn" data-category="dealsAndFunding"><i class="fa-solid fa-handshake"></i> Deals <span class="count" id="news-count-deals">0</span></button>
+          <button class="news-tab-btn" data-category="meetingsAndCorporate"><i class="fa-solid fa-users"></i> Corp <span class="count" id="news-count-meetings">0</span></button>
+          <button class="news-tab-btn" data-category="improvementsAndUpgrades"><i class="fa-solid fa-arrow-trend-up"></i> Growth <span class="count" id="news-count-improvements">0</span></button>
+        </div>
+
+        <!-- The Scrolling News Area -->
+        <div class="market-news-content" id="news-container">
+          <!-- Your JavaScript will inject news items here -->
+          <div class="news-item">Breaking: Bitcoin hits new resistance level...</div>
+          <div class="news-item">Fed announces new interest rate pause...</div>
+          <div class="news-item">Tech stocks rally after earnings reports...</div>
         </div>
       </div>
     </section>
