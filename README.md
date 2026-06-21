@@ -2,6 +2,12 @@
 
 FinSight AI is an AI-powered market analysis and news platform that helps users track stocks, cryptocurrencies, and market trends in real time.
 
+## 🌐 Live Demo
+
+**Website:** https://finsight-ainew.onrender.com/
+
+Try the application online without installing anything.
+
 ## Features
 
 * 📊 Real-time market data
@@ -50,6 +56,12 @@ The application will run at:
 http://localhost:3000
 ```
 
+## Deployment
+
+This project is deployed on Render:
+
+https://finsight-ainew.onrender.com/
+
 ## Project Structure
 
 ```text
@@ -63,6 +75,7 @@ finsight-ainew/
 ├── server.js
 ├── package.json
 ├── package-lock.json
+├── .gitignore
 └── README.md
 ```
 
@@ -83,7 +96,7 @@ finsight-ainew/
 * SOLUSDT
 * BNBUSDT
 
-## Future Enhancements
+## Roadmap
 
 * AI price prediction
 * User authentication
@@ -104,6 +117,9 @@ This project is licensed under the MIT License.
 
 ## Author
 
-Developed by VASEEM SADIKKALI
+**VASEEM SADIKKALI**
 
 GitHub: https://github.com/vaseemsadikkali
+
+Repository:
+https://github.com/vaseemsadikkali/finsight-ainew
