@@ -118,7 +118,6 @@ app.get('/api/stock/news', async (req, res) => {
         link: item.link,
         summary: item.summary || '',
         publishedAt: item.providerPublishTime ? new Date(item.providerPublishTime * 1000) : null,
-        // FIX 1: invalid optional chaining `?.?.` corrected to `?.[0]?.`
         thumbnail: item.thumbnail?.resolutions?.[0]?.url || null
       };
 
@@ -192,10 +191,8 @@ app.get('/api/news/aggregate', async (req, res) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    // Fetch news concurrently for all requested assets
     await Promise.all(symbolsArray.map(async (sym) => {
       let fetchSymbol = sym;
-      // Convert standard tickers to Yahoo Finance standard format
       if (['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA'].includes(sym)) {
         fetchSymbol = `${sym}-USD`;
       }
@@ -218,7 +215,6 @@ app.get('/api/news/aggregate', async (req, res) => {
       }
     }));
 
-    // Sort combined feed chronologically (Newest first)
     aggregatedNews.sort((a, b) => b.providerPublishTime - a.providerPublishTime);
 
     res.json(aggregatedNews);
@@ -404,7 +400,6 @@ function generateAISignal(candles, indicators, srLevels, predictions) {
 function generateFuturePredictions(candles, indicators, steps = 12) {
   if (candles.length < 30) return [];
   const currentPrice = candles[candles.length - 1].close;
-  // FIX 2: correctly compute interval from last two candle timestamps
   const intervalMs = candles.length >= 2 ? candles[candles.length - 1].time - candles[candles.length - 2].time : 60000;
   let predictions = [{ time: candles[candles.length - 1].time, value: currentPrice }], projectedPrice = currentPrice;
   for (let t = 1; t <= steps; t++) { projectedPrice += (Math.random() - 0.5) * currentPrice * 0.001; predictions.push({ time: candles[candles.length - 1].time + (t * intervalMs), value: Number(projectedPrice.toFixed(2)) }); }
@@ -421,7 +416,6 @@ function enrichCandles(candles) {
 async function fetchYahooStockHistory(symbol, interval) {
   const params = { '1m':{i:'1m',r:'1d'}, '5m':{i:'5m',r:'5d'}, '15m':{i:'15m',r:'15d'}, '1h':{i:'1h',r:'3mo'}, '1d':{i:'1d',r:'2y'} }[interval] || {i:'1d',r:'1y'};
   const data = await fetchJson(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol.toUpperCase()}?interval=${params.i}&range=${params.r}`);
-  // FIX 3: added [0] index to access the first result object and its nested properties
   if (data?.chart?.result?.[0]) {
     const q = data.chart.result[0].indicators.quote[0], t = data.chart.result[0].timestamp;
     return t.map((time, i) => q.open[i]!==null ? { time: time*1000, open: Number(q.open[i].toFixed(2)), high: Number(q.high[i].toFixed(2)), low: Number(q.low[i].toFixed(2)), close: Number(q.close[i].toFixed(2)), volume: q.volume[i]||0 } : null).filter(Boolean);
@@ -451,7 +445,6 @@ class BinanceStreamManager {
     if (streamInfo.isCrypto) {
       try {
         const klines = await fetchJson(`https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=200`);
-        // FIX 4: use correct numeric indices for Binance kline array fields
         streamInfo.candles = klines.map(k => ({ time: k[0], open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]) }));
       } catch (err) { streamInfo.candles = generateSimulatedHistory(symbol, 100); streamInfo.isCrypto = false; }
     } else {
@@ -543,7 +536,6 @@ async function runBacktest(symbol, interval, strategy, type = 'crypto') {
     let candles = [];
     if (type === 'crypto') {
       const data = await fetchJson(`https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=1000`);
-      // FIX 5: use correct Binance kline indices (same pattern as subscribe above)
       candles = data.map(k => ({ time: k[0], close: parseFloat(k[4]) }));
     } else {
       const oneYearAgo = new Date();
@@ -629,7 +621,6 @@ io.on('connection', (socket) => {
       let symbol = (data.symbol || 'BTC').toUpperCase();
       let strategyInput = (data.strategy || 'ai').toLowerCase();
       
-      // 1. Auto-format Crypto Tickers for Yahoo Finance compatibility
       const cryptoAssets = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA'];
       if (cryptoAssets.includes(symbol) && !symbol.includes('-')) {
         symbol = `${symbol}-USD`;
@@ -637,29 +628,22 @@ io.on('connection', (socket) => {
         symbol = symbol.replace('USDT', '-USD');
       }
 
-      // 2. Map strategy keys coming from frontend dropdown selections
       let strategy = 'ai';
       if (strategyInput.includes('rsi')) strategy = 'rsi';
       if (strategyInput.includes('cross') || strategyInput.includes('trend')) strategy = 'crossover';
 
       console.log(`[Backtest Engine] Running ${strategy.toUpperCase()} strategy for parsed ticker: ${symbol}`);
 
-      // 3. Define time frame window (Last 90 Days of Daily Data)
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - 90);
 
-      // FIX 6: .split('T') returns an array — must use [0] to get the date string
       const options = {
         period1: startDate.toISOString().split('T')[0],
         period2: endDate.toISOString().split('T')[0],
         interval: '1d'
       };
 
-      // 4. Fetch historical arrays from Yahoo Finance safely
-      // NOTE: yahooFinance.historical() is deprecated (Yahoo removed the underlying API).
-      // Use chart() instead, same as the rest of this codebase (see /api/stock/multiframes
-      // and runBacktest() above), and filter out null closes (non-trading days/gaps).
       const chartData = await yahooFinance.chart(symbol, options);
       const historicalData = (chartData.quotes || []).filter(q => q.close !== null && q.close !== undefined);
 
@@ -676,6 +660,10 @@ io.on('connection', (socket) => {
       let position = 0; 
       let tradesCount = 0;
       let winningTrades = 0;
+      
+      // NEW: Track historical trades and actual entry prices
+      let history = [];
+      let entryPrice = 0;
 
       for (let i = 5; i < historicalData.length; i++) {
         const current = historicalData[i];
@@ -686,20 +674,17 @@ io.on('connection', (socket) => {
 
         // Evaluate Selected Technical Rules Matrix
         if (strategy === 'rsi') {
-          // RSI Reversal rule simulation (consecutive drops = oversold, rises = overbought)
           const isOversold = current.close < prev.close && prev.close < historicalData[i - 2].close;
           const isOverbought = current.close > prev.close && prev.close > historicalData[i - 2].close;
           if (isOversold) signal = 'BUY';
           else if (isOverbought) signal = 'SELL';
         } 
         else if (strategy === 'crossover') {
-          // Trend Moving Average Crossover simulation (Price vs 5-Day Simple MA)
           const sma5 = (historicalData[i].close + historicalData[i-1].close + historicalData[i-2].close + historicalData[i-3].close + historicalData[i-4].close) / 5;
           if (current.close > sma5 && prev.close <= sma5) signal = 'BUY';
           else if (current.close < sma5 && prev.close >= sma5) signal = 'SELL';
         } 
         else {
-          // AI Decision Engine simulation (momentum directional shifts combined with volume weight confirmation)
           if (current.close > prev.close && current.volume > prev.volume) signal = 'BUY';
           else if (current.close < prev.close && current.volume > prev.volume) signal = 'SELL';
         }
@@ -707,22 +692,46 @@ io.on('connection', (socket) => {
         // Execute orders inside simulated ecosystem
         if (signal === 'BUY' && position === 0) {
           position = balance / current.close;
+          entryPrice = current.close; // Store exact entry price
           balance = 0;
         } else if (signal === 'SELL' && position > 0) {
-          const buyPrice = initialBalance / position; // proxy calculation for win logging
           const closingValue = position * current.close;
+          const tradePnL = closingValue - (position * entryPrice); // Calculate real PnL
+          
+          history.push({
+            type: 'BUY', 
+            entryPrice: entryPrice,
+            exitPrice: current.close,
+            pnl: tradePnL,
+            exitReason: strategyInput.toUpperCase() + ' Signal',
+            time: current.date || Date.now()
+          });
+
           balance = closingValue;
           position = 0;
           tradesCount++;
-          if (current.close > prev.close) winningTrades++; 
+          if (tradePnL > 0) winningTrades++; // Correct Win/Loss condition
         }
       }
 
       // Automatically liquidate remaining assets at execution horizon's close
       if (position > 0) {
-        balance = position * historicalData[historicalData.length - 1].close;
+        const finalClose = historicalData[historicalData.length - 1].close;
+        const closingValue = position * finalClose;
+        const tradePnL = closingValue - (position * entryPrice);
+        
+        history.push({
+          type: 'BUY',
+          entryPrice: entryPrice,
+          exitPrice: finalClose,
+          pnl: tradePnL,
+          exitReason: 'End of Period',
+          time: historicalData[historicalData.length - 1].date || Date.now()
+        });
+
+        balance = closingValue;
         tradesCount++;
-        if (balance > initialBalance) winningTrades++;
+        if (tradePnL > 0) winningTrades++;
         position = 0;
       }
 
@@ -732,12 +741,13 @@ io.on('connection', (socket) => {
       // 6. Return standard compliance payload to app.js frontend parser
       socket.emit('backtest_results', {
         success: true,
-        symbol: symbol.replace('-USD', ''), // Strip suffix for clean UI display
+        symbol: symbol.replace('-USD', ''), 
         strategy: strategyInput.toUpperCase(),
         totalReturn: totalReturn.toFixed(2),
         winRate: winRate.toFixed(2),
-        tradesCount: tradesCount || 2, // Guarantee visibility fallback 
-        finalBalance: balance.toFixed(2)
+        tradesCount: tradesCount, 
+        finalBalance: balance.toFixed(2),
+        history: history.slice(-10).reverse() 
       });
 
     } catch (err) {
