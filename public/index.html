@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Finsight AI - Premium AI-Powered Trading Terminal with Live Charts, Multi-Timeframe Analysis, and Market News">
+  <title>Finsight AI Terminal | Advanced Trading Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div id="initial-loading-screen" class="initial-loading-screen">
+    <div class="loader-content">
+      <div class="logo-icon"><i class="fa-solid fa-chart-pie"></i></div>
+      <h2>Finsight <span>AI</span></h2>
+      <div class="spinner"></div>
+      <p>Initializing Terminal...</p>
+    </div>
+  </div>
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-icon"><i class="fa-solid fa-chart-pie"></i></div>
+      <div class="logo-text">Finsight <span>AI</span></div>
+      <div class="badge-pro">PRO v4.0</div>
+    </div>
+    <div class="market-summary">
+      <div class="summary-item" data-symbol="BTCUSDT"><span class="lbl">BTC/USDT</span><span class="val price-ticker" id="header-price-btc">---</span></div>
+      <div class="summary-item" data-symbol="ETHUSDT"><span class="lbl">ETH/USDT</span><span class="val price-ticker" id="header-price-eth">---</span></div>
+      <div class="summary-item" data-symbol="SOLUSDT"><span class="lbl">SOL/USDT</span><span class="val price-ticker" id="header-price-sol">---</span></div>
+    </div>
+    <div class="header-controls">
+      <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Light/Dark Theme"><i class="fa-solid fa-moon"></i></button>
+      <button class="voice-mic-btn" id="voice-mic-btn" title="Voice Search"><i class="fa-solid fa-microphone"></i></button>
+      <div class="conn-status" id="connection-indicator"><span class="indicator-dot"></span><span class="indicator-text">Connecting...</span></div>
+    </div>
+  </header>
+
+  <main class="workspace-grid">
+    <section class="left-workspace">
+      <div class="card chart-card">
+        <div class="card-header">
+          <div class="chart-info">
+            <div class="symbol-selector-container">
+              <div class="symbol-dropdown-wrapper">
+                <select id="symbol-select" class="styled-select">
+                  <optgroup label="Crypto Assets">
+                    <option value="BTCUSDT" data-type="crypto" selected>BTC/USDT</option>
+                    <option value="ETHUSDT" data-type="crypto">ETH/USDT</option>
+                    <option value="SOLUSDT" data-type="crypto">SOL/USDT</option>
+                    <option value="BNBUSDT" data-type="crypto">BNB/USDT</option>
+                    <option value="XRPUSDT" data-type="crypto">XRP/USDT</option>
+                    <option value="ADAUSDT" data-type="crypto">ADA/USDT</option>
+                    <option value="DOGEUSDT" data-type="crypto">DOGE/USDT</option>
+                    <option value="DOTUSDT" data-type="crypto">DOT/USDT</option>
+                    <option value="AVAXUSDT" data-type="crypto">AVAX/USDT</option>
+                    <option value="LINKUSDT" data-type="crypto">LINK/USDT</option>
+                    <option value="MATICUSDT" data-type="crypto">MATIC/USDT</option>
+                    <option value="SHIBUSDT" data-type="crypto">SHIB/USDT</option>
+                    <option value="LTCUSDT" data-type="crypto">LTC/USDT</option>
+                    <option value="UNIUSDT" data-type="crypto">UNI/USDT</option>
+                  </optgroup>
+                  <optgroup label="Stock Equities">
+                    <option value="AAPL" data-type="stock">AAPL</option>
+                    <option value="TSLA" data-type="stock">TSLA</option>
+                    <option value="NVDA" data-type="stock">NVDA</option>
+                    <option value="MSFT" data-type="stock">MSFT</option>
+                    <option value="GOOG" data-type="stock">GOOG</option>
+                    <option value="AMZN" data-type="stock">AMZN</option>
+                    <option value="META" data-type="stock">META</option>
+                    <option value="AMD" data-type="stock">AMD</option>
+                    <option value="NFLX" data-type="stock">NFLX</option>
+                    <option value="SPY" data-type="stock">SPY</option>
+                    <option value="QQQ" data-type="stock">QQQ</option>
+                    <option value="JPM" data-type="stock">JPM</option>
+                    <option value="V" data-type="stock">VISA</option>
+                    <option value="INTC" data-type="stock">INTC</option>
+                    <option value="AVGO" data-type="stock">AVGO</option>
+                  </optgroup>
+                  <optgroup label="Other">
+                    <option value="CUSTOM" data-type="custom">Custom...</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div id="custom-symbol-wrapper" class="custom-symbol-wrapper" style="display: none;">
+                <input type="text" id="custom-symbol-input" placeholder="e.g. MSFT" class="styled-input">
+                <select id="custom-symbol-type" class="styled-select compact"><option value="crypto">Crypto</option><option value="stock">Stock</option></select>
+                <button id="custom-symbol-apply" class="apply-btn"><i class="fa-solid fa-arrow-right"></i></button>
+              </div>
+            </div>
+            <div class="timeframe-selector" id="timeframe-selector">
+              <button class="tf-btn active" data-tf="1m">1m</button>
+              <button class="tf-btn" data-tf="5m">5m</button>
+              <button class="tf-btn" data-tf="15m">15m</button>
+              <button class="tf-btn" data-tf="1h">1h</button>
+              <button class="tf-btn" data-tf="1d">1D</button>
+            </div>
+            <button class="chart-action-btn active" id="sr-toggle-btn" title="Toggle S&R Zones"><i class="fa-solid fa-eye"></i></button>
+          </div>
+          <div class="current-price-badge">
+            <span class="price-val" id="live-price-main">0.00</span>
+            <span class="price-change-pct green" id="live-change-pct">+0.00%</span>
+          </div>
+        </div>
+        <div class="chart-container-wrapper">
+          <div id="main-trading-chart" class="chart-element"></div>
+          <div id="rsi-trading-chart" class="chart-element rsi-pane"></div>
+          <div class="chart-watermark" id="chart-watermark">FINSIGHT AI</div>
+          <div class="chart-loader" id="chart-loader"><div class="spinner"></div><span>Synchronizing...</span></div>
+        </div>
+      </div>
+
+      <div class="card multiframe-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-layer-group"></i> Multi-Timeframe Overview</h3>
+          <span class="live-dot-pulse">LIVE</span>
+        </div>
+        <div class="multiframe-grid" id="multiframe-grid">
+          
+          <div class="mini-chart-container" data-tf="5m">
+            <div class="mini-chart-header">
+              <span class="tf-label">5 MIN</span>
+              <span class="tf-signal badge badge-hold" id="mf-signal-5m">HOLD</span>
+            </div>
+            <div class="mini-chart-stats">
+              <div class="mc-stat"><span class="lbl">Trend</span><span class="val" id="mf-trend-5m">--</span></div>
+              <div class="mc-stat"><span class="lbl">RSI</span><span class="val" id="mf-rsi-5m">--</span></div>
+            </div>
+            <div class="mini-chart-body" id="mini-chart-5m"></div>
+          </div>
+          
+          <div class="mini-chart-container" data-tf="1h">
+            <div class="mini-chart-header">
+              <span class="tf-label">1 HOUR</span>
+              <span class="tf-signal badge badge-hold" id="mf-signal-1h">HOLD</span>
+            </div>
+            <div class="mini-chart-stats">
+              <div class="mc-stat"><span class="lbl">Trend</span><span class="val" id="mf-trend-1h">--</span></div>
+              <div class="mc-stat"><span class="lbl">RSI</span><span class="val" id="mf-rsi-1h">--</span></div>
+            </div>
+            <div class="mini-chart-body" id="mini-chart-1h"></div>
+          </div>
+          
+          <div class="mini-chart-container" data-tf="1d">
+            <div class="mini-chart-header">
+              <span class="tf-label">1 DAY</span>
+              <span class="tf-signal badge badge-hold" id="mf-signal-1d">HOLD</span>
+            </div>
+            <div class="mini-chart-stats">
+              <div class="mc-stat"><span class="lbl">Trend</span><span class="val" id="mf-trend-1d">--</span></div>
+              <div class="mc-stat"><span class="lbl">RSI</span><span class="val" id="mf-rsi-1d">--</span></div>
+            </div>
+            <div class="mini-chart-body" id="mini-chart-1d"></div>
+          </div>
+
+        </div>
+      </div>
+      
+      <div class="card tabs-card">
+        <div class="tab-headers">
+          <button class="tab-btn active" data-tab="tab-portfolio"><i class="fa-solid fa-wallet"></i> Margin Portfolio</button>
+          <button class="tab-btn" data-tab="tab-backtester"><i class="fa-solid fa-flask"></i> Strategy Backtester</button>
+        </div>
+        <div class="tab-content-container">
+          <div class="tab-content active" id="tab-portfolio">
+            <div class="portfolio-layout">
+              <div class="portfolio-stats">
+                <div class="stat-box"><span class="lbl">Available Margin</span><span class="val" id="port-balance">$10,000.00</span></div>
+                <div class="stat-box"><span class="lbl">Total Equity</span><span class="val highlight-blue" id="port-equity">$10,000.00</span></div>
+                <div class="stat-box"><span class="lbl">Unrealized PnL</span><span class="val" id="port-unrealized">$0.00</span></div>
+                <div class="stat-box"><span class="lbl">Margin Used</span><span class="val warning-text" id="port-margin-used">$0.00</span></div>
+              </div>
+              <div class="portfolio-actions-grid">
+                <div class="order-form-container">
+                  <h4><i class="fa-solid fa-receipt"></i> Place Margin Order</h4>
+                  <div class="form-row">
+                    <label>Action</label>
+                    <div class="order-type-toggle">
+                      <button class="type-btn buy-btn active" id="order-type-buy" data-type="BUY">BUY (Long)</button>
+                      <button class="type-btn sell-btn" id="order-type-sell" data-type="SELL">SELL (Short)</button>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label>Leverage</label>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <input type="range" id="order-leverage-slider" min="1" max="50" value="1" class="styled-slider">
+                      <div class="leverage-display"><span id="leverage-val">1x</span></div>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label>Amount (Size)</label>
+                    <div class="input-with-label">
+                      <input type="number" id="order-amount" value="0.1" step="0.001" min="0.0001">
+                      <span id="order-unit" class="unit-lbl">BTC</span>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label>Take Profit & Stop Loss</label>
+                    <div class="tp-sl-input-group">
+                      <input type="number" id="order-tp" placeholder="Auto TP" step="0.01">
+                      <button class="auto-suggest-btn" id="suggest-tp-btn" title="Use AI TP"><i class="fa-solid fa-bullseye"></i></button>
+                      <input type="number" id="order-sl" placeholder="Auto SL" step="0.01">
+                      <button class="auto-suggest-btn" id="suggest-sl-btn" title="Use AI SL"><i class="fa-solid fa-shield-halved"></i></button>
+                    </div>
+                  </div>
+                  <button class="submit-order-btn" id="submit-order-btn">EXECUTE MARGIN TRADE</button>
+                </div>
+                <div class="positions-list-container">
+                  <h4><i class="fa-solid fa-chart-line"></i> Open Positions</h4>
+                  <div class="table-responsive">
+                    <table class="terminal-table" id="positions-table">
+                      <thead>
+                        <tr><th>Symbol</th><th>Type</th><th>Size / Lev</th><th>Entry</th><th>Liq. Price</th><th>Current</th><th>PnL</th><th>Action</th></tr>
+                      </thead>
+                      <tbody><tr class="placeholder-row"><td colspan="8">No active positions.</td></tr></tbody>
+                    </table>
+                  </div>
+                  <h4 style="margin-top: 12px;"><i class="fa-solid fa-history"></i> Trade History (<span id="port-trades-count">0</span>)</h4>
+                  <div class="table-responsive">
+                    <table class="terminal-table" id="history-table">
+                      <thead>
+                        <tr><th>ID</th><th>Symbol</th><th>Type</th><th>Size</th><th>Entry</th><th>Exit</th><th>Reason</th><th>PnL</th></tr>
+                      </thead>
+                      <tbody><tr class="placeholder-row"><td colspan="8">No trade history.</td></tr></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-content" id="tab-backtester">
+            <div class="backtest-layout">
+              <div class="backtest-controls-card">
+                <h4><i class="fa-solid fa-gear"></i> Backtest Configuration</h4>
+                <div class="backtest-form">
+                  <div class="bt-form-col">
+                    <label>Strategy Model</label>
+                    <select id="backtest-strategy" class="styled-select"><option value="AI_SIGNAL">AI Decision Engine</option><option value="RSI_OVERSOLD">RSI Reversal</option><option value="TREND_CROSSOVER">Trend Crossover</option></select>
+                  </div>
+                  <button class="btn-primary" id="run-backtest-btn"><i class="fa-solid fa-play"></i> Run Backtest</button>
+                </div>
+              </div>
+              <div class="backtest-results-grid" id="backtest-results-section" style="display: none;">
+                <div class="bt-summary-stats">
+                  <div class="bt-stat"><span class="lbl">Trades</span><span class="val" id="bt-total-trades">0</span></div>
+                  <div class="bt-stat"><span class="lbl">Win Rate</span><span class="val" id="bt-win-rate">0%</span></div>
+                  <div class="bt-stat"><span class="lbl">W/L Ratio</span><span class="val" id="bt-ratio">0/0</span></div>
+                  <div class="bt-stat"><span class="lbl">Net Profit</span><span class="val" id="bt-profit">$0.00</span></div>
+                  <div class="bt-stat"><span class="lbl">ROI</span><span class="val" id="bt-roi">0.00%</span></div>
+                </div>
+                <div class="table-responsive" style="margin-top:12px; max-height:200px;">
+                    <table class="terminal-table" id="backtest-table">
+                        <thead><tr><th>Type</th><th>Entry</th><th>Exit</th><th>Reason</th><th>PnL</th><th>Date</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+              </div>
+              <div class="backtest-placeholder" id="backtest-placeholder"><i class="fa-solid fa-calculator"></i><p>Configure a strategy to test.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="right-workspace">
+      <div class="card signal-card">
+        <div class="card-header"><h3><i class="fa-solid fa-robot"></i> Finsight AI Core</h3><span class="live-dot-pulse">LIVE</span></div>
+        <div class="signal-gauge-container">
+          <div class="signal-indicator" id="signal-badge">HOLD</div>
+          <div class="signal-subdetails">
+            <div class="detail-item"><span class="lbl">Confidence</span><span class="val" id="signal-confidence">--%</span></div>
+            <div class="detail-item"><span class="lbl">Strength</span><span class="val" id="signal-strength">--</span></div>
+          </div>
+        </div>
+        
+        <div class="sentiment-box">
+          <div class="sentiment-labels">
+            <span class="lbl"><i class="fa-solid fa-bolt"></i> Market Sentiment: <strong id="sentiment-text">Neutral</strong></span>
+            <span class="val">Vol: <strong id="volatility-val">--%</strong></span>
+          </div>
+          <div class="sentiment-bar-wrapper"><div class="sentiment-bar-fill" id="sentiment-bar"></div></div>
+          <ul id="sentiment-drivers" style="list-style: none; margin-top: 10px; font-size: 11px; color: var(--text-muted); padding: 0; display: flex; flex-direction: column; gap: 4px;">
+            <li>Loading fundamental drivers...</li>
+          </ul>
+        </div>
+
+        <div class="trade-setup-container" id="trade-setup-container" style="display: none; background: var(--bg-tertiary); padding: 12px; border-radius: var(--radius-md); margin-top: 10px; border: 1px solid var(--border-glow);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span id="setup-type" style="font-weight: 800; color: var(--color-blue); font-size: 13px;">--</span>
+            <span id="setup-conf" class="badge badge-buy">--</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 600;">
+            <div><span style="color:var(--text-dim)">ENTRY:</span> <span id="setup-entry" class="highlight-blue">--</span></div>
+            <div><span style="color:var(--text-dim)">SL:</span> <span id="setup-sl" class="red">--</span></div>
+            <div><span style="color:var(--text-dim)">TP1:</span> <span id="setup-tp1" class="green">--</span></div>
+            <div><span style="color:var(--text-dim)">TP2:</span> <span id="setup-tp2" class="green">--</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card analysis-card">
+        <div class="card-header"><h3><i class="fa-solid fa-microchip"></i> Live Insight Matrix</h3></div>
+        <div class="matrix-grid">
+            <div class="matrix-row"><span class="lbl">1m</span><span class="badge" id="matrix-1m">HOLD</span></div>
+            <div class="matrix-row"><span class="lbl">5m</span><span class="badge" id="matrix-5m">HOLD</span></div>
+            <div class="matrix-row"><span class="lbl">15m</span><span class="badge" id="matrix-15m">HOLD</span></div>
+            <div class="matrix-row"><span class="lbl">1h</span><span class="badge" id="matrix-1h">HOLD</span></div>
+            <div class="matrix-row"><span class="lbl">1D</span><span class="badge" id="matrix-1d">HOLD</span></div>
+        </div>
+        <hr style="border-color: var(--border-color); margin: 10px 0;">
+        <div class="explanation-content" id="ai-explanations-list"><p class="placeholder-text" style="color:var(--text-dim);font-size:12px;">Waiting for data feed...</p></div>
+      </div>
+
+      <div class="card sr-card">
+        <div class="card-header"><h3><i class="fa-solid fa-arrows-up-to-line"></i> Technical Zones</h3></div>
+        <div class="levels-grid">
+          <div class="levels-col"><h5 class="red-text">Resistance</h5><ul id="resistances-list" class="levels-list"><li>--</li></ul></div>
+          <div class="levels-col"><h5 class="green-text">Support</h5><ul id="supports-list" class="levels-list"><li>--</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card news-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-newspaper"></i> Market News</h3>
+          <span class="live-dot-pulse" id="news-status" style="display:none;">LOADED</span>
+        </div>
+        <div class="news-tabs" id="news-tabs">
+          <button class="news-tab-btn active" data-category="all"><i class="fa-solid fa-globe" style="font-size:9px;"></i> All <span class="count" id="news-count-all">0</span></button>
+          <button class="news-tab-btn" data-category="dealsAndFunding"><i class="fa-solid fa-handshake" style="font-size:9px;"></i> Deals <span class="count" id="news-count-deals">0</span></button>
+          <button class="news-tab-btn" data-category="meetingsAndCorporate"><i class="fa-solid fa-users" style="font-size:9px;"></i> Meetings <span class="count" id="news-count-meetings">0</span></button>
+          <button class="news-tab-btn" data-category="improvementsAndUpgrades"><i class="fa-solid fa-arrow-trend-up" style="font-size:9px;"></i> Growth <span class="count" id="news-count-improvements">0</span></button>
+          <button class="news-tab-btn" data-category="general"><i class="fa-solid fa-circle-info" style="font-size:9px;"></i> General <span class="count" id="news-count-general">0</span></button>
+        </div>
+        <div class="news-feed" id="news-feed">
+          <div class="news-empty"><i class="fa-solid fa-satellite-dish"></i><span>Select an asset to load news</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <div class="voice-overlay" id="voice-overlay">
+    <div class="voice-modal">
+        <div class="pulsing-mic"><i class="fa-solid fa-microphone"></i></div>
+        <h3>Listening...</h3>
+        <p>Try: "Report of Apple", "Chart for Solana", or "What is new stocks?"</p>
+        <button id="voice-cancel-btn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+
+  <div class="notification-toast" id="notification-toast"><div class="toast-content"><i class="fa-solid fa-circle-info" id="toast-icon"></i><span id="toast-message"></span></div></div>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
